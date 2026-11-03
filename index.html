@@ -296,6 +296,7 @@ body.has-dock .toast{bottom:calc(var(--tabh) + var(--dockh) + var(--safe-b) + va
       <button class="pill" data-act="say-test">Nghe thử</button>
       <span id="reset-zone"><button class="pill danger" data-act="reset-ask">Xóa tiến độ</button></span>
     </div>
+    <p class="hint" id="tts-diag" hidden aria-live="polite"></p>
   </section>
 
   <div id="notice"></div>
@@ -549,10 +550,31 @@ function toast(msg, ms){
    iOS Safari chỉ phát giọng đọc khi speak() được gọi ngay trong lần chạm (không qua setTimeout/Promise).
    Sau lần phát đầu tiên, các lệnh speak() nối tiếp (nghe cả hai, mẫu rồi tới mình) cũng chạy được. */
 const synth = window.speechSynthesis || null;
-let voices = [], ttsOk = false, ttsWarned = false, curUtter = null;
+let voices = [], ttsOk = false, ttsWarned = false, curUtter = null, lastStarted = false;
+
+/* iOS: khi bật chế độ Im lặng, Safari tắt tiếng giọng đọc vì trang ở phiên âm thanh "ambient".
+   Ép phiên sang "playback" (iOS 17+) và giữ một đoạn âm thanh im lặng chạy trong lúc đọc
+   (máy cũ hơn) để giọng đọc phát ra loa như khi xem video. */
+try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+const keepAlive = (() => {
+  if (!isIOS) return null;
+  const n = 4000, buf = new Uint8Array(44 + n), dv = new DataView(buf.buffer);
+  const tag = (o, t) => { for (let i = 0; i < t.length; i++) buf[o+i] = t.charCodeAt(i); };
+  tag(0,"RIFF"); dv.setUint32(4, 36+n, true); tag(8,"WAVE"); tag(12,"fmt "); dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+  dv.setUint32(24,8000,true); dv.setUint32(28,8000,true); dv.setUint16(32,1,true); dv.setUint16(34,8,true); tag(36,"data"); dv.setUint32(40,n,true); buf.fill(128,44);
+  let bin = ""; for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+  const a = new Audio("data:audio/wav;base64," + btoa(bin)); a.loop = true; a.preload = "auto"; a.setAttribute("playsinline", "");
+  return a;
+})();
+let keepTimer = 0;
+function audioOn(){ if (!keepAlive) return; clearTimeout(keepTimer); if (keepAlive.paused) { try { const p = keepAlive.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} } }
+function audioOff(now){ if (!keepAlive) return; clearTimeout(keepTimer); if (now) keepAlive.pause(); else keepTimer = setTimeout(() => keepAlive.pause(), 4000); }
+
+/* Giọng "vui" của iOS (Bubbles, Zarvox…) đọc sai hoặc không ra tiếng, không dùng để luyện phát âm. */
+const NOVELTY = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley)\b/i;
 function loadVoices(){
   if (!synth) return;
-  voices = synth.getVoices().filter(v => /^en[-_]/i.test(v.lang));
+  voices = synth.getVoices().filter(v => /^en[-_]/i.test(v.lang) && !NOVELTY.test(v.name));
   const sel = $("#voice"); if (!sel) return;
   const order = v => (/en[-_]US/i.test(v.lang) ? 0 : /en[-_]GB/i.test(v.lang) ? 1 : 2);
   voices.sort((a,b) => order(a)-order(b) || a.name.localeCompare(b.name));
@@ -568,17 +590,20 @@ function say(text, rate){
     if (synth.speaking || synth.pending) synth.cancel();
     if (synth.paused) synth.resume();
     const u = new SpeechSynthesisUtterance(text);
-    const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-US";
+    const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang.replace("_","-"); } else u.lang = "en-US";
     u.rate = rate || S.rate; u.volume = 1;
     curUtter = u; // giữ tham chiếu để trình duyệt không thu hồi giữa chừng
-    let done = false, started = false;
-    const fin = () => { if (!done) { done = true; res(); } };
-    u.onstart = () => { started = true; ttsOk = true; };
+    let done = false, started = false; lastStarted = false;
+    const fin = () => { if (!done) { done = true; if (curUtter === u) audioOff(); res(); } };
+    u.onstart = () => { started = true; ttsOk = true; lastStarted = true; };
     u.onend = fin; u.onerror = fin;
+    audioOn(); // phải gọi trong cùng lần chạm, trước speak()
     synth.speak(u); // gọi trực tiếp, không trì hoãn
     setTimeout(() => {
-      if (started || done || ttsOk || ttsWarned) return;
-      if (!synth.speaking) { ttsWarned = true; toast("Chưa phát được giọng đọc. Kiểm tra: tắt chế độ <b>Im lặng</b>, tăng âm lượng, rồi bấm Nghe lại. Nếu vẫn không được, mở trang bằng Safari.", 9000); }
+      if (started || done || ttsWarned) return;
+      ttsWarned = true;
+      if (synth.speaking) synth.cancel(); // iOS đôi khi kẹt hàng đợi: xóa để lần bấm sau phát được
+      toast("Chưa phát được giọng đọc. Bấm <b>Nghe</b> lại lần nữa. Nếu vẫn im: tăng âm lượng, tắt chế độ <b>Im lặng</b>, rồi tải lại trang.", 9000);
     }, 1500);
     setTimeout(fin, 8000 + text.length * 120);
   });
@@ -610,6 +635,7 @@ async function toggleRec(key){
   stopRecog();
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { setRes(key, verdict("bad","Không ghi âm được ở đây", micHelp())); return; }
   if (synth) synth.cancel();
+  audioOff(true);
   let stream;
   try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
   catch (err) { setRes(key, verdict("bad","Chưa dùng được micro", micHelp(err))); return; }
@@ -674,6 +700,7 @@ async function check(key){
   if (recog) { try { recog.stop(); } catch (e) {} return; }
   if (recState) stopRec();
   if (synth) synth.cancel();
+  audioOff(true);
   const text = key === "free" ? ($("#free-text").value || "").trim() : r.text;
   if (!text) { setRes(key, verdict("warn","Chưa có câu để chấm","Gõ một câu tiếng Anh vào ô phía trên.")); return; }
   setBtn(key, "check", true, "Nghe…", ICON.stop);
@@ -941,7 +968,16 @@ document.addEventListener("click", e => {
       break;
     }
     case "settings": { const s = $("#settings"); s.hidden = !s.hidden; b.setAttribute("aria-expanded", String(!s.hidden)); if (!s.hidden) loadVoices(); break; }
-    case "say-test": say("She asked for six desks and laughed."); break;
+    case "say-test": {
+      const d = $("#tts-diag"); if (d) { d.hidden = false; d.textContent = "Đang thử…"; }
+      say("She asked for six desks and laughed.").then(() => {
+        if (!d) return;
+        d.innerHTML = lastStarted
+          ? "Safari đã đọc xong câu mẫu. Nếu bạn vẫn không nghe gì: bấm nút tăng âm lượng bên hông máy khi đang đọc, kiểm tra tai nghe Bluetooth chưa kết nối, rồi thử chọn giọng khác ở trên."
+          : "Safari chưa phát được giọng đọc. Tải lại trang rồi bấm Nghe thử lần nữa. Nếu vẫn vậy: Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → English, tải một giọng.";
+      });
+      break;
+    }
     case "reset-ask": $("#reset-zone").innerHTML = '<span class="muted">Xóa hết tiến độ?</span> <button class="pill danger" data-act="reset-yes">Xóa</button> <button class="pill" data-act="reset-no">Thôi</button>'; break;
     case "reset-no": $("#reset-zone").innerHTML = '<button class="pill danger" data-act="reset-ask">Xóa tiến độ</button>'; break;
     case "reset-yes": S.words = {}; S.days = []; S.quiz = {t:0,c:0}; S.miss = {}; save(); updateHeader(); $("#reset-zone").innerHTML = '<span class="muted">Đã xóa tiến độ.</span>'; render(); break;
