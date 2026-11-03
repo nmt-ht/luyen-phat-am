@@ -17,6 +17,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Charis+SIL:wght@400;700&display=swap">
 <style>
+/* Hallmark · redesign: UX best-practice pass · tone: playful · anchor hue: violet 290
+ * pre-emit critique: P4 H4 E4 S4 R4 V3 · labelled card controls (Nghe · Chậm · Tự ghi âm), labelled skip,
+ * WCAG 4.5:1 on filled buttons, 44px targets, confetti only on milestones, inert background under sheet. */
 /* Giao diện kiểu app học ngôn ngữ: nút nổi 3D, màu tươi theo từng bài, chế độ tập trung khi luyện
  * (ẩn thanh tab, một thanh hành động ở đáy đi theo từng bước Nghe → Đọc → Kết quả → Tiếp tục). */
 :root{
@@ -26,6 +29,7 @@
   --sun:oklch(81% 0.16 78); --sun-deep:oklch(67% 0.15 62); --sun-soft:oklch(96% 0.045 88); --sun-ink:oklch(47% 0.11 60);
   --ok:oklch(64% 0.17 150); --ok-deep:oklch(51% 0.15 150); --ok-soft:oklch(95.5% 0.045 150); --ok-ink:oklch(42% 0.12 150);
   --bad:oklch(63% 0.2 25); --bad-deep:oklch(51% 0.19 25); --bad-soft:oklch(95.5% 0.03 25); --bad-ink:oklch(46% 0.17 25);
+  --ok-edge:oklch(40% 0.12 150); --bad-edge:oklch(40% 0.16 25); --sun-strong:oklch(52% 0.12 60);
   --warn:oklch(76% 0.15 68); --warn-deep:oklch(63% 0.14 58); --warn-soft:oklch(96% 0.045 80); --warn-ink:oklch(47% 0.11 58);
   --scrim:oklch(20% 0.03 285 / .45);
   --font-ui:"Nunito",ui-rounded,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -43,6 +47,7 @@
     --sun:oklch(80% 0.15 78); --sun-deep:oklch(62% 0.14 62); --sun-soft:oklch(31% 0.06 78); --sun-ink:oklch(86% 0.12 82);
     --ok:oklch(68% 0.17 150); --ok-deep:oklch(52% 0.15 150); --ok-soft:oklch(29% 0.06 150); --ok-ink:oklch(84% 0.14 150);
     --bad:oklch(66% 0.19 25); --bad-deep:oklch(50% 0.18 25); --bad-soft:oklch(29% 0.07 25); --bad-ink:oklch(84% 0.11 25);
+    --ok-edge:oklch(40% 0.12 150); --bad-edge:oklch(39% 0.15 25); --sun-strong:oklch(55% 0.12 62);
     --warn:oklch(78% 0.14 70); --warn-deep:oklch(60% 0.13 60); --warn-soft:oklch(30% 0.06 70); --warn-ink:oklch(86% 0.11 78);
     --scrim:oklch(5% 0.02 285 / .6);
     color-scheme:dark;
@@ -55,6 +60,7 @@
   --sun:oklch(80% 0.15 78); --sun-deep:oklch(62% 0.14 62); --sun-soft:oklch(31% 0.06 78); --sun-ink:oklch(86% 0.12 82);
   --ok:oklch(68% 0.17 150); --ok-deep:oklch(52% 0.15 150); --ok-soft:oklch(29% 0.06 150); --ok-ink:oklch(84% 0.14 150);
   --bad:oklch(66% 0.19 25); --bad-deep:oklch(50% 0.18 25); --bad-soft:oklch(29% 0.07 25); --bad-ink:oklch(84% 0.11 25);
+  --ok-edge:oklch(40% 0.12 150); --bad-edge:oklch(39% 0.15 25); --sun-strong:oklch(55% 0.12 62);
   --warn:oklch(78% 0.14 70); --warn-deep:oklch(60% 0.13 60); --warn-soft:oklch(30% 0.06 70); --warn-ink:oklch(86% 0.11 78);
   --scrim:oklch(5% 0.02 285 / .6);
   color-scheme:dark;
@@ -81,11 +87,12 @@ body.focus .top, body.focus .tabs, body.focus #notice{display:none}
 .b3:active:not(:disabled){transform:translateY(4px);box-shadow:0 0 0 var(--d)}
 .b3:disabled{filter:grayscale(1);opacity:.5}
 .b3.ghost{--c:var(--surface);--d:var(--line-deep);--t:var(--ink);border:2px solid var(--line)}
-.b3.ok{--c:var(--ok);--d:var(--ok-deep);--t:#fff}
-.b3.bad{--c:var(--bad);--d:var(--bad-deep);--t:#fff}
+.b3.ok{--c:var(--ok-deep);--d:var(--ok-edge);--t:#fff}
+.b3.bad{--c:var(--bad-deep);--d:var(--bad-edge);--t:#fff}
 .b3.warn{--c:var(--warn);--d:var(--warn-deep);--t:oklch(25% 0.05 60)}
 .b3.sun{--c:var(--sun);--d:var(--sun-deep);--t:oklch(25% 0.05 60)}
-.b3.live{--c:var(--bad);--d:var(--bad-deep);--t:#fff}
+.b3.live{--c:var(--bad-deep);--d:var(--bad-edge);--t:#fff}
+.b3.skip{flex:none;padding:0 16px}
 .b3.wide{width:100%}
 .b3.sq{padding:0;width:56px;flex:none}
 .b3.locked{--t:var(--muted);border-style:dashed}
@@ -101,14 +108,14 @@ body.focus .top, body.focus .tabs, body.focus #notice{display:none}
 .logo h1{margin:0;font-size:1.3em;font-weight:900;letter-spacing:-.01em;white-space:nowrap}
 .chipc{display:flex;align-items:center;gap:4px;font-weight:900;font-size:.95em;padding:0 4px;min-height:40px;font-variant-numeric:tabular-nums}
 .chipc svg{width:24px;height:24px}
-.chipc.fire{color:var(--sun-deep)} .chipc.fire.off{color:var(--muted);filter:grayscale(1);opacity:.7}
+.chipc.fire{color:var(--sun-deep)} .chipc.fire span{color:var(--sun-ink)} .chipc.fire.off{color:var(--muted);filter:grayscale(1);opacity:.7}
 .chipc.star{color:var(--pri-ink)}
 .icon-btn{width:44px;height:44px;border-radius:var(--r-s);display:grid;place-items:center;color:var(--muted)}
 .icon-btn svg{width:24px;height:24px}
 
 .notice{background:var(--pri-soft);border-radius:var(--r-m);padding:12px 14px;font-size:.9em;display:flex;gap:10px;align-items:flex-start}
 .notice p{margin:0;flex:1;min-width:0}
-.notice button{color:var(--pri-ink);font-weight:800;min-height:32px;padding:0 4px}
+.notice button{color:var(--pri-ink);font-weight:800;min-height:44px;min-width:44px;padding:0 4px;margin:-10px -4px -10px 0}
 
 h2.sec{margin:10px 0 -4px;font-size:1.15em;font-weight:900}
 
@@ -126,7 +133,7 @@ h2.sec{margin:10px 0 -4px;font-size:1.15em;font-weight:900}
 .tiles{display:flex;flex-direction:column;gap:12px}
 .tile{--h:290;display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:var(--r-l);box-shadow:0 4px 0 var(--line);padding:14px;transition:transform 80ms var(--ease),box-shadow 80ms var(--ease)}
 .tile:active{transform:translateY(4px);box-shadow:0 0 0 var(--line)}
-.tile .ic{width:60px;height:60px;border-radius:50%;background:oklch(62% 0.17 var(--h));box-shadow:0 4px 0 oklch(49% 0.16 var(--h));color:#fff;display:grid;place-items:center;font-weight:900;font-size:1.05em;letter-spacing:-.02em;line-height:1;text-align:center;padding:4px}
+.tile .ic{width:60px;height:60px;border-radius:50%;background:oklch(51% 0.16 var(--h));box-shadow:0 4px 0 oklch(41% 0.14 var(--h));color:#fff;display:grid;place-items:center;font-weight:900;font-size:1.05em;letter-spacing:-.02em;line-height:1;text-align:center;padding:4px}
 .tile .ic svg{width:28px;height:28px}
 .tile .nm{display:block;font-weight:900;font-size:1.05em;line-height:1.25}
 .tile .ds{display:block;color:var(--muted);font-size:.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -163,21 +170,34 @@ h2.sec{margin:10px 0 -4px;font-size:1.15em;font-weight:900}
 .tail{color:var(--pri);text-decoration:underline;text-decoration-thickness:.1em;text-underline-offset:.14em;text-decoration-skip-ink:none}
 .ipa{font-family:var(--font-ipa);font-size:1.35em;color:var(--muted);margin-top:-4px}
 .ipa .tail{text-decoration-thickness:2px;text-underline-offset:4px}
-.speak{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 2px}
+.speak{display:flex;align-items:flex-end;justify-content:center;gap:clamp(12px,5vw,24px);margin:6px 0 2px}
 .spk{width:76px;height:76px;border-radius:24px;background:var(--pri);color:#fff;box-shadow:0 5px 0 var(--pri-deep);display:grid;place-items:center;transition:transform 80ms var(--ease),box-shadow 80ms var(--ease)}
 .spk svg{width:38px;height:38px}
 .spk:active{transform:translateY(5px);box-shadow:0 0 0 var(--pri-deep)}
 .spk.sm{width:56px;height:56px;border-radius:18px;background:var(--surface);color:var(--pri-ink);border:2px solid var(--line);box-shadow:0 4px 0 var(--line-deep)}
 .spk.sm svg{width:30px;height:30px}
 .spk.sm:active{box-shadow:0 0 0 var(--line-deep);transform:translateY(4px)}
+/* Nút có nhãn trên thẻ từ: Nghe · Chậm · Tự ghi âm */
+.sbtn{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:64px;font-size:.8em;font-weight:900;color:var(--muted)}
+.sbtn .bx{width:56px;height:56px;border-radius:18px;background:var(--surface);color:var(--pri-ink);border:2px solid var(--line);box-shadow:0 4px 0 var(--line-deep);display:grid;place-items:center;transition:transform 80ms var(--ease),box-shadow 80ms var(--ease)}
+.sbtn .bx svg{width:28px;height:28px}
+.sbtn:active .bx{transform:translateY(4px);box-shadow:0 0 0 var(--line-deep)}
+.sbtn.main{color:var(--pri-ink)}
+.sbtn.main .bx{width:72px;height:72px;border-radius:24px;background:var(--pri);color:var(--on-pri);border:0;box-shadow:0 5px 0 var(--pri-deep)}
+.sbtn.main .bx svg{width:36px;height:36px}
+.sbtn.main:active .bx{box-shadow:0 0 0 var(--pri-deep);transform:translateY(5px)}
+.sbtn.live{color:var(--bad-ink)} .sbtn.live .bx{background:var(--bad-deep);color:#fff;border-color:transparent;box-shadow:0 4px 0 var(--bad-edge)}
+.sbtn.locked .bx{background:transparent;border-style:dashed;box-shadow:none;color:var(--muted)}
+.sbtn:focus-visible{outline:none} .sbtn:focus-visible .bx{outline:3px solid var(--pri);outline-offset:2px}
+.card:focus{outline:none}
 .tip{align-self:stretch;display:flex;gap:10px;align-items:flex-start;text-align:left;margin:4px 0 0;font-size:.95em;background:var(--sun-soft);border-radius:var(--r-m);padding:12px 14px}
 .tip svg{width:22px;height:22px;color:var(--sun-deep);margin-top:1px}
 .pair{align-self:stretch;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;font-size:.9em;color:var(--muted);font-weight:700}
-.wbtn{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:0 14px;border-radius:999px;background:var(--surface);border:2px solid var(--line);box-shadow:0 3px 0 var(--line);font-weight:800;color:var(--ink);transition:transform 80ms var(--ease),box-shadow 80ms var(--ease)}
+.wbtn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;background:var(--surface);border:2px solid var(--line);box-shadow:0 3px 0 var(--line);font-weight:800;color:var(--ink);transition:transform 80ms var(--ease),box-shadow 80ms var(--ease)}
 .wbtn:active{transform:translateY(3px);box-shadow:0 0 0 var(--line)}
 .wbtn svg{width:16px;height:16px;color:var(--pri)}
 .wbtn .ip{font-family:var(--font-ipa);font-weight:400;color:var(--muted)}
-.prev{display:inline-flex;align-items:center;gap:2px;color:var(--muted);font-weight:800;font-size:.85em;min-height:36px;padding-right:6px}
+.prev{display:inline-flex;align-items:center;gap:2px;color:var(--muted);font-weight:800;font-size:.85em;min-height:44px;padding-right:6px}
 .prev svg{width:18px;height:18px}
 .swipe-hint{margin:-4px 0 0;text-align:center;font-size:.82em;color:var(--muted);font-weight:700}
 
@@ -294,14 +314,14 @@ textarea{width:100%;min-height:112px;border-radius:var(--r-m);border:2px solid v
 textarea:focus{outline:none;border-color:var(--pri)}
 .samples{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none}
 .samples::-webkit-scrollbar{display:none}
-.samples button{flex:none;scroll-snap-align:start;border:2px solid var(--line);background:var(--surface);box-shadow:0 3px 0 var(--line);border-radius:999px;min-height:42px;padding:0 14px;font-weight:800;font-size:.92em;white-space:nowrap}
+.samples button{flex:none;scroll-snap-align:start;border:2px solid var(--line);background:var(--surface);box-shadow:0 3px 0 var(--line);border-radius:999px;min-height:44px;padding:0 14px;font-weight:800;font-size:.92em;white-space:nowrap}
 .samples button:active{transform:translateY(3px);box-shadow:none}
 
 /* ---------- Quy tắc ---------- */
 .rules{display:flex;flex-direction:column;gap:14px}
 .rule{--h:290;background:var(--surface);border:2px solid var(--line);border-radius:var(--r-l);box-shadow:0 4px 0 var(--line);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .rule h3{margin:0;font-size:1.1em;font-weight:900;display:flex;align-items:center;gap:10px}
-.rule h3 i{width:34px;height:34px;border-radius:11px;background:oklch(62% 0.17 var(--h));color:#fff;display:grid;place-items:center;font-style:normal;font-size:.8em;font-weight:900;flex:none}
+.rule h3 i{width:34px;height:34px;border-radius:11px;background:oklch(51% 0.16 var(--h));color:#fff;display:grid;place-items:center;font-style:normal;font-size:.8em;font-weight:900;flex:none}
 .rule p{margin:0;font-size:.95em}
 .rule ol{margin:0;padding-left:22px;font-size:.95em;display:flex;flex-direction:column;gap:8px}
 .rtab{display:flex;flex-direction:column;gap:10px}
@@ -311,7 +331,7 @@ textarea:focus{outline:none;border-color:var(--pri)}
 .rrow .when{font-size:.92em}
 .rrow .ex{grid-column:2}
 .ex{display:flex;flex-wrap:wrap;gap:6px}
-.ex button{border:2px solid var(--line);background:var(--bg);border-radius:10px;min-height:38px;padding:0 10px;font-weight:800;font-size:.95em}
+.ex button{border:2px solid var(--line);background:var(--bg);border-radius:10px;min-height:44px;padding:0 12px;font-weight:800;font-size:.95em}
 .ex button:active{background:var(--pri-soft)}
 
 /* ---------- Thanh tab ---------- */
@@ -342,7 +362,7 @@ textarea:focus{outline:none;border-color:var(--pri)}
 .toast{position:fixed;left:var(--gl);right:var(--gr);bottom:calc(var(--tabh) + var(--safe-b) + 12px);z-index:50;max-width:528px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:var(--r-m);padding:12px 16px;font-size:.92em;display:flex;gap:12px;align-items:flex-start;box-shadow:0 8px 24px oklch(0% 0 0 / .2)}
 body.focus .toast{bottom:calc(var(--footh,0px) + 12px)}
 .toast p{margin:0;flex:1;min-width:0}
-.toast button{color:inherit;font-weight:900;min-height:28px}
+.toast button{color:inherit;font-weight:900;min-height:44px;min-width:44px;margin:-10px -6px -10px 0}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
 .confetti i{position:absolute;left:50%;top:42%;width:10px;height:14px;border-radius:3px;animation:cf 1.1s cubic-bezier(.15,.7,.3,1) forwards}
 @keyframes cf{to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
@@ -353,7 +373,7 @@ body.focus .toast{bottom:calc(var(--footh,0px) + 12px)}
 .b3.sq span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .pnl{display:flex;flex-direction:column;gap:12px}
 .leadrow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:-6px}
-.leadrow .linkish{flex:none;min-height:28px;font-size:.92em}
+.leadrow .linkish{flex:none;min-height:44px;font-size:.92em;margin-top:-10px}
 .fl{font-weight:900;font-size:.95em}
 .steps{list-style:none;margin:0;padding:0;display:flex;justify-content:center;gap:6px 14px;flex-wrap:wrap;font-size:.8em;font-weight:900;color:var(--muted)}
 .steps li{display:flex;align-items:center;gap:6px}
@@ -792,7 +812,9 @@ function setRes(key, html){
 }
 function setBtn(key, act, live, label, icon){
   document.querySelectorAll(`[data-act="${act}"][data-key="${key}"]`).forEach(b => {
-    b.classList.toggle("live", live); b.setAttribute("aria-busy", String(live)); b.innerHTML = icon + `<span>${label}</span>`;
+    b.classList.toggle("live", live); b.setAttribute("aria-busy", String(live));
+    if (b.classList.contains("sbtn")) { b.querySelector(".bx").innerHTML = icon; b.querySelector(".lb").textContent = label; }
+    else b.innerHTML = icon + `<span>${label}</span>`;
   });
 }
 async function toggleRec(key){
@@ -840,7 +862,7 @@ async function toggleRec(key){
 }
 function stopRec(){
   const st = recState; if (!st) return; recState = null; clearTimeout(st.timer);
-  setBtn(st.key, "rec", false, "Ghi âm", ICON.mic);
+  setBtn(st.key, "rec", false, st.key === "w" ? "Tự ghi âm" : "Ghi âm", ICON.mic);
   try { st.rec.state !== "inactive" ? st.rec.stop() : st.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
 }
 
@@ -1019,7 +1041,12 @@ function viewLesson(){
     <div class="ctop">${st.i > 0 ? `<button class="prev" data-act="prev" aria-label="Từ trước">${ICON.prev}Trước</button>` : "<span></span>"}<span class="tag">âm cuối <span class="ip">${esc(endLabel(x))}</span></span><span id="badge">${badgeHTML(x.w)}</span></div>
     <div class="word">${tailHTML(x.w, x.e)}</div>
     <div class="ipa">/${tailHTML(x.ipa, x.ie)}/</div>
-    <div class="speak"><button class="spk" data-act="say" data-key="w" aria-label="Nghe mẫu">${ICON.speaker}</button><button class="spk sm" data-act="slow" data-key="w" aria-label="Nghe chậm">${ICON.turtle}</button></div>
+    <div class="speak">
+      <button class="sbtn main" data-act="say" data-key="w"><span class="bx">${ICON.speaker}</span><span class="lb">Nghe</span></button>
+      <button class="sbtn" data-act="slow" data-key="w"><span class="bx">${ICON.turtle}</span><span class="lb">Chậm</span></button>
+      ${CAN_MIC ? `<button class="sbtn" data-act="rec" data-key="w"><span class="bx">${ICON.mic}</span><span class="lb">Tự ghi âm</span></button>`
+        : `<button class="sbtn locked" data-act="rec" data-key="w" aria-disabled="true" aria-label="Tự ghi âm (cần mở bằng Safari)"><span class="bx">${ICON.lock}</span><span class="lb">Tự ghi âm</span></button>`}
+    </div>
     <p class="tip">${ICON.bulb}<span>${esc(TIPS[x.t] || "")}</span></p>
     ${contrast}
   </article>
@@ -1034,22 +1061,19 @@ function stepsHTML(){
 }
 function lessonFoot(){
   const set = currentSet(), last = st.i === set.words.length-1, fb = st.fb;
-  const sq = (act, icon, label, extra) => `<button class="b3 ghost sq${extra || ""}" data-act="${act}" data-key="w" aria-label="${label}">${icon}<span>${label}</span></button>`;
-  const skip = `<button class="b3 ghost sq" data-act="next" aria-label="${last ? "Kết thúc bài" : "Bỏ qua, sang từ tiếp"}">${ICON.next}<span>Bỏ qua</span></button>`;
+  const skip = `<button class="b3 ghost skip" data-act="next" aria-label="${last ? "Bỏ qua, kết thúc bài" : "Bỏ qua, sang từ tiếp"}"><span>Bỏ qua</span></button>`;
   const nextLabel = last ? "Hoàn thành bài" : "Tiếp tục";
   if (fb) {
     const msg = `<div class="fbm" role="status"><span class="fi">${fb.cls === "ok" ? ICON.tick : ICON.bang}</span><div><b>${fb.title}</b>${fb.body ? `<p>${fb.body}</p>` : ""}${fb.heard != null ? `<p>Máy nghe: <span class="heard">“${esc(fb.heard)}”</span></p>` : ""}</div></div>`;
     if (fb.cls === "ok" || !CAN_CHECK) return msg + `<div class="acts"><button class="b3 ${fb.cls} main" data-act="next"><span>${nextLabel}</span></button></div>`;
     return msg + `<div class="acts"><button class="b3 ${fb.cls} main" data-act="check" data-key="w">${ICON.mic}<span>Thử lại</span></button>${skip}</div>`;
   }
-  let left = "", main;
+  let main;
   if (!st.heard) main = `<button class="b3 main" data-act="say" data-key="w">${ICON.speaker}<span>Nghe mẫu</span></button>`;
   else if (CAN_CHECK) main = `<button class="b3 main" data-act="check" data-key="w">${ICON.mic}<span>Đọc to<span class="xl"> để chấm</span></span></button>`;
   else if (CAN_MIC) main = `<button class="b3 main" data-act="rec" data-key="w">${ICON.mic}<span>Ghi âm giọng bạn</span></button>`;
-  else main = `<button class="b3 main" data-act="next"><span>${nextLabel}</span></button>`;
-  if (CAN_CHECK && CAN_MIC) left = sq("rec", ICON.mic.replace("<svg", '<svg style="opacity:.75"'), "Ghi âm để tự nghe lại");
-  else if (!CAN_MIC && !CAN_CHECK) left = sq("check", ICON.lock, "Ghi âm và chấm (cần Safari)", " locked");
-  return stepsHTML() + `<div class="acts">${left}${main}${skip}</div>`;
+  else return `<div class="acts"><button class="b3 main" data-act="next"><span>${nextLabel}</span></button></div>`;
+  return stepsHTML() + `<div class="acts">${main}${skip}</div>`;
 }
 function viewDone(set){
   const n = set.words.length, okN = set.words.filter(x => status(x.w) === "ok").length;
@@ -1061,7 +1085,7 @@ function viewDone(set){
     <div class="stats">
       <div style="--c:var(--ok-deep)"><span>Đọc đúng</span><b>${st.sess.ok}</b></div>
       <div style="--c:var(--pri)"><span>Lượt chấm</span><b>${st.sess.t}</b></div>
-      <div style="--c:var(--sun-deep)"><span>Đã thuộc</span><b>${okN}/${n}</b></div>
+      <div style="--c:var(--sun-strong)"><span>Đã thuộc</span><b>${okN}/${n}</b></div>
     </div>
     <div class="btns">
       ${set.sentences.length ? `<button class="b3 wide" data-act="sentences">${ICON.chat}<span>Luyện ${set.sentences.length} câu</span></button>` : ""}
@@ -1102,11 +1126,12 @@ function go(delta){
   }
   st.i = ni; if (st.set !== "review") { S.pos[st.set] = st.i; save(); }
   st.heard = false; render(); window.scrollTo(0,0); speakWord();
+  const card = $("#entry"); if (card) { card.tabIndex = -1; card.focus({preventScroll:true}); }
 }
 function showFeedback(fb){
   st.sess.t++; if (fb.cls === "ok") st.sess.ok++;
   st.fb = fb; renderFoot(true);
-  if (fb.cls === "ok") { sfx("ok"); confetti(); } else sfx("bad");
+  sfx(fb.cls === "ok" ? "ok" : "bad"); // pháo giấy chỉ dành cho lúc hoàn thành bài
 }
 
 /* ---------- Luyện tai ---------- */
@@ -1238,6 +1263,7 @@ function render(){
 }
 function openSettings(on){
   $("#settings").hidden = !on; $("#scrim").hidden = !on;
+  [".app", ".tabs", "#foot"].forEach(s => { const el = $(s); if (el) el.inert = on; }); // khóa nội dung phía sau khi bảng đang mở
   $("#settings-btn").setAttribute("aria-expanded", String(on));
   if (on) { loadVoices(); const c = $("#settings .x"); if (c) c.focus(); } else $("#settings-btn").focus();
 }
