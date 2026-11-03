@@ -4,8 +4,8 @@ Web app luyện phát âm âm cuối tiếng Anh (-s, -ed, phụ âm cuối, c�
 
 Mở bằng Safari: https://nmt-ht.github.io/luyen-phat-am/ → Chia sẻ → **Thêm vào MH chính**.
 
-- **Luyện**: nghe mẫu, ghi âm để so sánh, chấm bằng nhận dạng giọng nói.
-- **Nghe**: luyện tai với các cặp từ chỉ khác âm cuối.
+- **Học**: từng từ đi theo các bước Nghe mẫu → Đọc to → Xem kết quả, cuối bài có câu luyện.
+- **Luyện tai**: luyện tai với các cặp từ chỉ khác âm cuối.
 - **Tự do**: luyện câu bất kỳ.
 - **Quy tắc**: bảng đọc -s / -ed và lỗi hay gặp.
 
